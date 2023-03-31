@@ -1,0 +1,26 @@
+#include "oplsaa.ff/forcefield.itp"
+
+
+[ atomtypes ]
+; name mass charge ptype sigma(nm) epsilon (kJ/mol) 
+   op_unk.C1  op_unk.C1   12.011000   0.000   A      3.633e-01    6.40178e-01 ;Ref Martiniano and Thomson
+   op_unk.H1  op_unk.H1    1.007900   0.000   A      0.0	  0.0
+   op_unk.N1  op_unk.N1   14.007000   0.000   A      3.2e-01      7.31e-01
+   op_hcn.C1  op_hcn.C1   12.011000   0.000   A      3.633e-01    6.40178e-01 ;Ref Martiniano and Thomson
+   op_hcn.H1  op_hcn.H1    1.007900   0.000   A      0.0	  0.0
+   op_hcn.N1  op_hcn.N1   14.007000   0.000   A      3.2e-01      7.31e-01
+
+;Include the force field from solvent
+
+#include "UNK.itp"
+;Include force field from HCN isolated
+#include "HCN.itp"
+
+[ system ]
+; Name
+LiquidHCN
+
+[ molecules ]
+; Compound        #mols
+HCN          	   1
+UNK		173
