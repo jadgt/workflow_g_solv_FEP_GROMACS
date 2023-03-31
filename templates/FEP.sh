@@ -15,16 +15,16 @@ for i in $(seq 0 $(($num_lambdas - 1))); do
         # Run the simulation
         cd "$sim_dir"
         if [ "$sim_type" == "EM" ]; then
-            gmx grompp -f minim_fep.mdp -c "$root_dir"/liq.gro -p "$root_dir"/topol.top -n "$root_dir"/index.ndx -o em.tpr
+            gmx grompp -f minim_fep.mdp -c "$root_dir"/liq.gro -p "$root_dir"/topol.top -o em.tpr
             gmx mdrun -v -deffnm em
         elif [ "$sim_type" == "NVT" ]; then
-            gmx grompp -f nvt_fep.mdp -c "$root_dir"/lambda_$(($i))/EM/em.gro -p "$root_dir"/topol.top -n "$root_dir"/index.ndx -o nvt.tpr
+            gmx grompp -f nvt_fep.mdp -c "$root_dir"/lambda_$(($i))/EM/em.gro -p "$root_dir"/topol.top -o nvt.tpr
             gmx mdrun -v -deffnm nvt
         elif [ "$sim_type" == "NPT" ]; then
-            gmx grompp -f npt_fep.mdp -c "$root_dir"/lambda_$(($i))/NVT/nvt.gro -p "$root_dir"/topol.top -n "$root_dir"/index.ndx -o npt.tpr
+            gmx grompp -f npt_fep.mdp -c "$root_dir"/lambda_$(($i))/NVT/nvt.gro -p "$root_dir"/topol.top -o npt.tpr
             gmx mdrun -v -deffnm npt
         else
-            gmx grompp -f md_fep.mdp -c "$root_dir"/lambda_$(($i))/NPT/npt.gro -p "$root_dir"/topol.top -n "$root_dir"/index.ndx -o md.tpr
+            gmx grompp -f md_fep.mdp -c "$root_dir"/lambda_$(($i))/NPT/npt.gro -p "$root_dir"/topol.top -o md.tpr
             gmx mdrun -v -deffnm md
         fi
         

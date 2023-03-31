@@ -163,4 +163,4 @@ pwd
 ```
 And copy and paste the path that is printed.
 
-Now is just time to wait for the results :).
+Now is just time to patiently wait for the results :).
