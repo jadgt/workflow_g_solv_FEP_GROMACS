@@ -142,17 +142,17 @@ init_lambda_state        = 5
 
 Now, is time to run the FEP simulation that require executing every simulation in an ordered manner and using the last geometry as the starting one for the next. More specifically, the order is:
 1. Lambda_0
-    1.1 EM
-    1.2 NVT
-    1.3 NPT 
-    1.4 MD
+    1.1. EM
+    1.2. NVT
+    1.3. NPT 
+    1.4. MD
 2. Lambda_1
 ....
 11. Lambda_10
-    11.1 EM
-    11.2 NVT
-    11.3 NPT 
-    11.4 MD 
+    11.1. EM
+    11.2. NVT
+    11.3. NPT 
+    11.4. MD 
 
 Manually it could be a really tedious task, but in the folder templates there is a bash script called [FEP.sh](/templates/FEP.sh) that will take care of it for you.
 
