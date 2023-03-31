@@ -40,4 +40,4 @@ The general workflow will be:
 
 Browsing in the bibliography some good studies have been done for the determination of the force field parameters of HCN. Since we aim to simulate the liquid structure and the free energy of solvation, the bonded parameters will not be very relevant, but the non-bonded.
 
-A good reference is given by the work of Martiniano and Costa Cabral (https://doi.org/10.1016/j.cplett.2012.10.080.). So, we take the non-bonded parameters for that reference to build the force field of the liquid.
+A good reference is given by the work of Martiniano and Costa Cabral (https://doi.org/10.1016/j.cplett.2012.10.080.). So, we take the non-bonded parameters for that reference to build the force field of the liquid. The force field is contained in the files HCN.itp and topol.top
