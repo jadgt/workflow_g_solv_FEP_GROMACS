@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Set the number of lambdas to run
-num_lambdas=11
+# Prompt the user to input the number of lambdas to run
+read -p "Enter the number of lambdas to run: " num_lambdas
 
-# Set the static root directory
-root_dir="/Users/trivino/Desktop/HCN/hcn_liquid"
+# Prompt the user to input the root directory
+read -p "Enter the path to the root directory: " root_dir
 
 # Loop over the lambda folders and run the simulations in order
 for i in $(seq 0 $(($num_lambdas - 1))); do
@@ -40,6 +40,7 @@ for i in $(seq 0 $(($num_lambdas - 1))); do
         fi
 
     done
+
 
     echo "Finished lambda $i"
 done
