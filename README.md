@@ -40,9 +40,9 @@ The general workflow will be:
 
 Browsing in the bibliography some good studies have been done for the determination of the force field parameters of HCN. Since we aim to simulate the liquid structure and the free energy of solvation, the bonded parameters will not be very relevant, but the non-bonded.
 
-A good reference is given by the work of Martiniano and Costa Cabral (https://doi.org/10.1016/j.cplett.2012.10.080.). So, we take the non-bonded parameters for that reference to build the force field of the liquid. The force field is contained in the files [itp file](HCN.itp) and [top file](topol.top)
+A good reference is given by the work of Martiniano and Costa Cabral (https://doi.org/10.1016/j.cplett.2012.10.080.). So, we take the non-bonded parameters for that reference to build the force field of the liquid. The force field is contained in the files [itp file](/input_files/HCN.itp) and [top file](/input_files/topol.top)
 
-The easy part is to get a [geometry of HCN](HCN.gro).
+The easy part is to get a [geometry of HCN](/input_files/HCN.gro).
 
 ### Solvation box
 
@@ -61,106 +61,128 @@ The number 173 comes from the density at 278 K (0.704 g/cm3) and the molar weigh
 
 Once we have the solvated box we can run an MD simulation to test if the parameters works fine. (I let this evaluation to the expertise of the reader but generally is good practice to check with experimental values.)
 
-### Preparing the FEP files
+### System preparation routine and FEP simulation automatized!
 
 Once we have all the files ready and we are satisfied with the Force Field, we can prepare for the FEP simulations. 
 First thing, in order to make the FEP possible, since we are simulating the pure liquid conditions we need to create a ficticious residue (which is exactly the same as one HCN molecule) so the program will identify the single HCN molecule for which we want to calculate the free energy of solvation. 
 
-For that matter, I have created a second residue called [UNK](UNK.gro) and added to the topology as seen in the [top file](topol.top). Also, I have used the molecule [HCN](HCN.gro) as the central molecule, built the periodic box as before and solvated with the UNK.gro file as follows:
+For that matter, I have created a second residue called [UNK](/input_files/UNK.itp) and added to the topology as seen in the [top file](/input_files/topol.top). Also, I have used the molecule [HCN](/input_files/HCN.gro) as the central molecule, built the periodic box as before and solvated with the [UNK geometry](/input_files/UNK.gro) file as follows:
 ```
 gmx insert-molecules -f box -ci UNK -nmol 173 -o liq
 ```
-That produces the file contained in this tutorial [liq.gro](liq.gro)
+That produces the file contained in this tutorial [liq.gro](/input_files/liq.gro)
 
-Once we have everything ready, we come to the trickiest part, building the FEP files. For making this easy we will use an auxiliary file contained in the folder [templates](/templates/) called [free_energy.mdp](/templates/free_energy.mdp).
-Let us examine that file:
+Once we have everything ready, we can start working on the scripts that automatically will perform our FEP simulation. Let us start having a look to the script [fep.py](fep.py). In that script the configuration files are defined as variables that will be used for minimizing and equilibrating the system.
+
+So, in this case, I will use the minimum configuration options needed and the user of this tutorial can introduce as many modifications as desired.
+**Energy minimization**
 ```
-; Free energy control parameters
-free_energy              = yes
-couple-moltype           = HCN  ; name of moleculetype to decouple
-init_lambda_state        = 0
-delta_lambda             = 0
-calc_lambda_neighbors    = 1
-couple-lambda0           = vdw-q
-couple-lambda1           = none
-couple-intramol          = yes
-; Vectors of lambda specified here
-; lambdas                  0    1    2    3    4    5    6    7    8    9    10
-vdw_lambdas              = 0.00 0.10 0.20 0.30 0.40 0.50 0.60 0.70 0.80 0.90 1.00
-coul_lambdas             = 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
-bonded_lambdas           = 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
-restraint_lambdas        = 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
-; Masses are not changing (particle identities are the same at lambda = 0 and lambda = 1)
-mass_lambdas             = 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
-; Not doing simulated temperting here
-temperature_lambdas      = 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
-; Options for the decoupling
-sc-alpha                 = 0.5
-sc-coul                  = no       ; linear interpolation of Coulomb (none in this case)
+em_mdp = """
+; minimal mdp options for energy minimization
+integrator               = steep
+nsteps                   = 500
+coulombtype              = pme
+"""
+```
+**NPT equilibration**
+```
+equil_mdp = """
+; equilibration mdp options
+integrator               = md
+nsteps                   = 100000
+dt                       = 0.002
+nstenergy                = 100
+rlist                    = 1.1
+nstlist                  = 10
+rvdw                     = 1.1
+coulombtype              = pme
+rcoulomb                 = 1.1
+fourierspacing           = 0.13
+constraints              = h-bonds
+tcoupl                   = v-rescale
+tc-grps                  = system
+tau-t                    = 0.5
+ref-t                    = 278
+pcoupl                   = C-rescale
+ref-p                    = 1
+compressibility          = 4.5e-5
+tau-p                    = 1
+gen-vel                  = yes
+gen-temp                 = 278
+"""
+```
+*Notice that the temperature I am using in this case is 278 K, but the user can change this at will.*
+
+Once we are satisfied with the options for minimization and equilibration we can have a look at the FEP simulation configuration file
+```
+run_mdp = """
+; We'll use the sd integrator (an accurate and efficient leap-frog stochastic dynamics integrator) with 100000 time steps (200ps)
+integrator               = sd
+nsteps                   = 100000
+dt                       = 0.002
+nstenergy                = 1000
+nstcalcenergy            = 50 ; should be a divisor of nstdhdl 
+nstlog                   = 5000
+; Cut-offs at 1.0nm
+rlist                    = 1.1
+rvdw                     = 1.1
+; Coulomb interactions
+coulombtype              = pme
+rcoulomb                 = 1.1
+fourierspacing           = 0.13
+; Constraints
+constraints              = h-bonds
+; Set temperature to 300K
+tc-grps                  = system
+tau-t                    = 2.0
+ref-t                    = 278
+; Set pressure to 1 bar with a thermostat that gives a correct
+; thermodynamic ensemble
+pcoupl                   = C-rescale
+ref-p                    = 1.0
+compressibility          = 4.5e-5
+tau-p                    = 5.0
+
+; Set the free energy parameters
+free-energy              = yes
+couple-moltype           = HCN ; Insert here the name of the solute residue, in our case is called HCN !!
+nstdhdl                  = 50 ; frequency for writing energy difference in dhdl.xvg, 0 means no ouput, should be a multiple of nstcalcenergy. 
+; These 'soft-core' parameters make sure we never get overlapping
+; charges as lambda goes to 0
+; Soft-core function
 sc-power                 = 1
 sc-sigma                 = 0.3
-nstdhdl                  = 10
-disre           = simple
-nstdisreout     = 0
+sc-alpha                 = 1.0
+; We still want the molecule to interact with itself at lambda=0
+couple-intramol          = no
+couple-lambda1           = vdwq
+couple-lambda0           = none
+init-lambda-state        = {}
+
+; These are the lambda states at which we simulate
+; For separate LJ and Coulomb decoupling, use
+fep-lambdas              = {}
+"""
 ```
-Here we have defined 10 lambdas and we are changing the vdw parameters only. A couple of things are really important:
-1. The molecule to decouple: This is why we needed to define an additional residue name in order to make the program understand what is the solute (HCN) and what is the solvent (UNK)
+Once we are satisfied, we can execute the script typing in terminal:
 ```
-couple-moltype           = HCN  ; name of moleculetype to decouple
+python fep.py
 ```
-2. The non bonded interactions to be decoupled: In the beginning we want the vdW and Coulomb forces to be present, but by the end it should be gone since we are moving from solvent to vaccum.
+And the script will ask as arguments the name of the files that shall be included in the simulation by extension:
 ```
-couple-lambda0           = vdw-q
-couple-lambda1           = none
+Enter the name of the .gro file: liq.gro
+Enter the name of the .top file: topol.top
+Enter the name of the solute .itp file: HCN.itp
+Enter the name of the solvent .itp file: UNK.itp
 ```
-3. Only the lambdas for vdW will change, not the Coulombs: This is a requirement from the program, otherwise it will print a warning.
-```
-; lambdas                  0    1    2    3    4    5    6    7    8    9    10
-vdw_lambdas              = 0.00 0.10 0.20 0.30 0.40 0.50 0.60 0.70 0.80 0.90 1.00
-coul_lambdas             = 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00 0.00
-```
-Once the `free_energy.mdp` is ready, we can modify the exact same mdp files we have used for our MD test simulation (`minim.mdp,nvt.mdp,npt.mdp and md.mdp`) with the free energy perturbation control instructions contained in `free_energy.mdp` by simply executing the script [generate_templates.py](/templates/generate_templates.py) inside the templates folder.
+After the equilibration is completed, the script will ask to input the number of lambdas that we want to use and the numbers for the lambdas, as follows:
 
 ```
-python generate_templates.py
+Enter the number of lambdas: 5
+Enter the set of fep-lambdas (separated by space): 0.0 0.5 0.7 0.9 1.0
 ```
-This will create 4 new mdp files with the suffix `_fep.mdp`. You can have a look in the folder [templates](/templates/).
+I have picked more density towards the decoupling for being the most sensitive part.
 
-### Preparing all the simulations
+Once inputed that, the script will take care of the whole calculation and display the final results in terminal.
 
-Once we have our files ready, in the folder [templates](/templates/) can be found a python script called [generate_fep.py](/templates/generate_fep.py) that will take care of creating the Lambda folders and putting the corresponding mdp files inside while changing for every mdp file the line
-```
-init_lambda_state        = 0
-```
-to the corresponding lambda state. For example, in lambda 5 it should appear:
-```
-init_lambda_state        = 5
-```
-**The code will ask you to input the number of lambdas to be calculated, you have to input 10 + 1 = 11 (remember that lambdas starts with 0**
-
-### Running the FEP simulation
-
-Now, is time to run the FEP simulation that require executing every simulation in an ordered manner and using the last geometry as the starting one for the next. More specifically, the order is:
-1. Lambda_0
-    1.1. EM
-    1.2. NVT
-    1.3. NPT 
-    1.4. MD
-2. Lambda_1
-....
-11. Lambda_10
-    11.1. EM
-    11.2. NVT
-    11.3. NPT 
-    11.4. MD 
-
-Manually it could be a really tedious task, but in the folder templates there is a bash script called [FEP.sh](/templates/FEP.sh) that will take care of it for you.
-
-The code will ask you to input the number of lambdas to be calculated, we use 11 as for the previous step.
-The code will ask you also to input the working directory which is the one where all the lambda folders have been copied or the parent folder of templates. So, prior to execute the script type:
-```
-pwd
-```
-And copy and paste the path that is printed.
-
-Now is just time to patiently wait for the results :).
+Enjoy!
