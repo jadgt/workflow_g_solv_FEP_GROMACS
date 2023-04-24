@@ -1,0 +1,23 @@
+; HCN using OPLS-AA force field
+
+[ moleculetype ]
+; name  nrexcl
+HCN     3
+
+[ atoms ]
+; nr type  resnr residue  atom  cgnr charge  mass 
+    1   op_hcn.C1      1 HCN   C1        1   0.28  12.011000 ; OPLS-AA
+    2   op_hcn.N1      1 HCN   N1        1  -0.43  14.007000
+    3   op_hcn.H1      1 HCN   H1        1   0.15   1.007900
+
+[ bonds ]
+; ai    aj    type     r0 (nm)   fc (kJ/(mol nm2)) 
+    1     2     1   0.115700 543920.000
+    1     3     1   0.106500 343088.000
+
+[ angles ]
+;  ai    aj    ak type    theta0 (degr)   fc (kJ/(mol rad2) 
+    2     1     3     1    180.000    2000.360
+
+
+
