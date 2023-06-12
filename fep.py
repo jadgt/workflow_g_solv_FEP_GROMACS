@@ -10,7 +10,7 @@ def write_mdp(mdp_string, mdp_name, directory):
     mdp_filename=os.path.join(directory,mdp_name)
     mdp_filehandle=open(mdp_filename,'w')
     mdp_filehandle.write(mdp_string)
-    mdp_filehandle.close()
+    mdp_filehandle.close() 
 
 # get the path to the working directory
 pwd = os.getcwd()
@@ -24,12 +24,24 @@ if not os.path.isdir(output_files):
     os.mkdir(output_files)
 
 # Ask for the filenames
+print("""
+AUTOMATIC FREE ENERGY OF SOLVATION ROUTINE
+------------------------------------------
+System preparation subroutine
+------------------------------------------
+Input the file names (including the extension) that shall be used along the simulation.
+If you are using a custom solvent with a topology (.itp) associated, introduce the file name with extension
+otherwise, leave it blank
+""")
 gro_file_name = input("Enter the name of the .gro file: ")
 top_file_name = input("Enter the name of the .top file: ")
 solute_itp_name = input("Enter the name of the solute .itp file: ")
 solvent_itp_name = input("Enter the name of the solvent .itp file: ")
 
-file_names = [gro_file_name,top_file_name,solute_itp_name,solvent_itp_name]
+# Only add the solvent_itp_name to file_names if it is not empty
+file_names = [gro_file_name, top_file_name, solute_itp_name]
+if solvent_itp_name.strip():
+    file_names.append(solvent_itp_name)
 
 # copy selected files from input_files directory to output_files directory
 for file_name in file_names:
@@ -86,7 +98,15 @@ os.system('gmx mdrun -ntmpi 1 -deffnm equil') # -ntmpi 1 is defined since the sy
 
 ### GROMACS FEP Automatic Routine
 # Running FEP routine
-
+print("""
+AUTOMATIC FREE ENERGY OF SOLVATION ROUTINE
+------------------------------------------
+FEP Simulation subroutine
+------------------------------------------
+Example of usage:
+Enter the number of lambdas: 7
+Enter the set of fep-lambdas (separated by space): 0.0 0.2 0.4 0.6 0.8 0.9 1.0
+""")
 # Ask for the number of lambdas
 number_of_lambdas = int(input("Enter the number of lambdas: "))
 
@@ -143,22 +163,24 @@ init-lambda-state        = {}
 ; For separate LJ and Coulomb decoupling, use
 fep-lambdas              = {}
 """
-## Create a lambda file for every lambda step, copy files and run
+# Create a lambda file for every lambda step, copy files and run
 for lambda_number in range(number_of_lambdas):
     lambda_directory = os.path.join(output_files, f"lambda_{lambda_number:0>2}")
     os.mkdir(lambda_directory)
     gro_file = os.path.join(output_files, 'equil.gro')
     top_file = os.path.join(output_files, top_file_name)
     itp_solute = os.path.join(output_files, solute_itp_name)
-    itp_solvent = os.path.join(output_files, solvent_itp_name)
     shutil.copy(gro_file, os.path.join(lambda_directory, 'conf.gro'))
     shutil.copy(top_file, lambda_directory)
     shutil.copy(itp_solute, lambda_directory)
-    shutil.copy(itp_solvent, lambda_directory)
+    # Only copy the solvent itp if it was given
+    if solvent_itp_name.strip():
+        itp_solvent = os.path.join(output_files, solvent_itp_name)
+        shutil.copy(itp_solvent, lambda_directory)
     write_mdp(run_mdp.format(lambda_number, ' '.join(fep_lambdas)), 'grompp.mdp', lambda_directory)
     os.chdir(lambda_directory)
     os.system('gmx grompp')
-    os.system('gmx mdrun')
+    os.system('gmx -ntmpi 2 mdrun')
 
 #Analysis of the FEP output and computing the Free Energy
 
